@@ -18,52 +18,68 @@ export class NavigationService {
     const queryParams: Record<string, string> = {};
     if (params.location) queryParams.location = params.location;
 
-    return cognitorApi.get<CognitorNavigation[]>('navigation', queryParams, {
-      cache: 'force-cache',
-      next: { 
-        revalidate: 3600, // 1 hour
-        tags: ['navigation'] 
-      },
-    });
+    return cognitorApi.get<CognitorNavigation[]>('navigation', queryParams, 
+      process.env.NODE_ENV === 'development' 
+        ? { cache: 'no-store' }
+        : {
+            cache: 'force-cache',
+            next: { 
+              revalidate: 300, // 5 minutes in production
+              tags: ['navigation'] 
+            },
+          }
+    );
   }
 
   /**
    * Get main navigation (header)
    */
   async getMainNavigation(): Promise<CognitorResponse<CognitorNavigation>> {
-    return cognitorApi.get<CognitorNavigation>('navigation/main', {}, {
-      cache: 'force-cache',
-      next: { 
-        revalidate: 3600, // 1 hour
-        tags: ['navigation', 'main-navigation'] 
-      },
-    });
+    return cognitorApi.get<CognitorNavigation>('navigation/main', {}, 
+      process.env.NODE_ENV === 'development' 
+        ? { cache: 'no-store' }
+        : {
+            cache: 'force-cache',
+            next: { 
+              revalidate: 300, // 5 minutes in production
+              tags: ['navigation', 'main-navigation'] 
+            },
+          }
+    );
   }
 
   /**
    * Get footer navigation
    */
   async getFooterNavigation(): Promise<CognitorResponse<CognitorNavigation>> {
-    return cognitorApi.get<CognitorNavigation>('navigation/footer', {}, {
-      cache: 'force-cache',
-      next: { 
-        revalidate: 3600, // 1 hour
-        tags: ['navigation', 'footer-navigation'] 
-      },
-    });
+    return cognitorApi.get<CognitorNavigation>('navigation/footer', {}, 
+      process.env.NODE_ENV === 'development' 
+        ? { cache: 'no-store' }
+        : {
+            cache: 'force-cache',
+            next: { 
+              revalidate: 300, // 5 minutes in production
+              tags: ['navigation', 'footer-navigation'] 
+            },
+          }
+    );
   }
 
   /**
    * Get sidebar navigation
    */
   async getSidebarNavigation(): Promise<CognitorResponse<CognitorNavigation>> {
-    return cognitorApi.get<CognitorNavigation>('navigation/sidebar', {}, {
-      cache: 'force-cache',
-      next: { 
-        revalidate: 3600, // 1 hour
-        tags: ['navigation', 'sidebar-navigation'] 
-      },
-    });
+    return cognitorApi.get<CognitorNavigation>('navigation/sidebar', {}, 
+      process.env.NODE_ENV === 'development' 
+        ? { cache: 'no-store' }
+        : {
+            cache: 'force-cache',
+            next: { 
+              revalidate: 300, // 5 minutes in production
+              tags: ['navigation', 'sidebar-navigation'] 
+            },
+          }
+    );
   }
 
   /**
@@ -74,13 +90,15 @@ export class NavigationService {
       const response = await cognitorApi.get<NavigationItem[]>(
         'navigation/breadcrumbs',
         { path: currentPath },
-        {
-          cache: 'force-cache',
-          next: { 
-            revalidate: 1800, // 30 minutes
-            tags: ['breadcrumbs'] 
-          },
-        }
+        process.env.NODE_ENV === 'development' 
+          ? { cache: 'no-store' }
+          : {
+              cache: 'force-cache',
+              next: { 
+                revalidate: 300, // 5 minutes in production
+                tags: ['breadcrumbs'] 
+              },
+            }
       );
       return response.data;
     } catch (error) {

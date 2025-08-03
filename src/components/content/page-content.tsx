@@ -126,22 +126,20 @@ export function PageContent({ page }: PageContentProps) {
 
       <Separator />
 
-      {/* Main Content */}
-      <div className="prose prose-gray dark:prose-invert max-w-none">
-        {(page.page_elements && page.page_elements.length > 0) || (page.content && page.content.length > 0) ? (
-          <RichContentRenderer 
-            pageElements={page.page_elements} 
-            content={page.content} 
-          />
-        ) : (
-          <div className="text-center py-12 text-muted-foreground">
-            <p>No content available for this page.</p>
-            {page.description && (
-              <p className="mt-4 text-sm">{page.description}</p>
-            )}
-          </div>
-        )}
-      </div>
+      {/* Content Layout with Sidebar */}
+      {(page.page_elements && page.page_elements.length > 0) || (page.content && page.content.length > 0) ? (
+        <RichContentRenderer 
+          pageElements={page.page_elements} 
+          content={page.content} 
+        />
+      ) : (
+        <div className="text-center py-12 text-muted-foreground">
+          <p>No content available for this page.</p>
+          {page.description && (
+            <p className="mt-4 text-sm">{page.description}</p>
+          )}
+        </div>
+      )}
 
       {/* Author Bio */}
       {page.author && page.author.bio && (

@@ -15,7 +15,7 @@ export async function Breadcrumbs({ currentPath }: BreadcrumbsProps) {
   
   // Always add home
   breadcrumbItems.push({
-    id: 'home',
+    id: 'static-home',
     title: 'Home',
     url: '/',
     isActive: currentPath === '/'
@@ -28,7 +28,7 @@ export async function Breadcrumbs({ currentPath }: BreadcrumbsProps) {
     const title = currentSlug.charAt(0).toUpperCase() + currentSlug.slice(1);
     
     breadcrumbItems.push({
-      id: currentSlug,
+      id: `page-${currentSlug}`,
       title: title,
       url: currentPath,
       isActive: true

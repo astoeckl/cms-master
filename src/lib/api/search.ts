@@ -37,14 +37,25 @@ export class SearchService {
     }
 
     try {
-      // Use the Cognitor search endpoint
-      const response = await cognitorApi.get<any>(`search/sites/${cognitorApi.siteId}`, queryParams, {
-        cache: 'default',
-        next: { 
-          revalidate: 300, // 5 minutes
-          tags: ['search'] 
-        },
+      console.log('🔍 Search API Debug:', {
+        endpoint: `search/sites/${cognitorApi.siteId}`,
+        siteId: cognitorApi.siteId,
+        queryParams,
+        nodeEnv: process.env.NODE_ENV
       });
+
+      // Use the Cognitor search endpoint with environment-aware caching
+      const response = await cognitorApi.get<any>(`search/sites/${cognitorApi.siteId}`, queryParams, 
+        process.env.NODE_ENV === 'development' 
+          ? { cache: 'no-store' }
+          : {
+              cache: 'default',
+              next: { 
+                revalidate: 300, // 5 minutes
+                tags: ['search'] 
+              },
+            }
+      );
 
       if (response.success && response.data) {
         const { results, total, page, size, total_pages } = response.data;
@@ -94,12 +105,82 @@ export class SearchService {
         message: 'No results found'
       };
     } catch (error) {
-      console.error('Search failed:', error);
+      console.error('🚨 Search API Error:', {
+        endpoint: `search/sites/${cognitorApi.siteId}`,
+        siteId: cognitorApi.siteId,
+        queryParams,
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      
+      // Try fallback search using pages API
+      console.log('🔄 Attempting fallback search via Pages API...');
+      try {
+        return await this.fallbackSearch(query);
+      } catch (fallbackError) {
+        console.error('❌ Fallback search also failed:', fallbackError);
+        return {
+          data: { items: [], total: 0, page: 1, limit: query.limit || 10 },
+          success: false,
+          message: 'Search temporarily unavailable'
+        };
+      }
+    }
+  }
+
+  /**
+   * Fallback search using pages API with text search
+   */
+  private async fallbackSearch(query: SearchQuery): Promise<CognitorResponse<PaginatedData<SearchResult>>> {
+    const { pagesService } = await import('./pages');
+    
+    try {
+      const response = await pagesService.getPages({
+        search: query.query,
+        limit: query.limit || 10,
+        offset: query.offset || 0,
+        status: 'published'
+      });
+
+      if (response.success && response.data.items) {
+        // Transform pages to search results
+        const searchResults: SearchResult[] = response.data.items.map((page) => ({
+          id: page.id,
+          type: 'page',
+          title: page.title,
+          excerpt: page.excerpt || page.content?.substring(0, 200) || '',
+          url: `/${page.slug}`,
+          score: 1.0, // No real scoring in fallback
+          publishedAt: page.publishedAt,
+          category: page.category,
+          tags: page.tags || [],
+          metadata: {
+            contentType: 'page',
+            wordCount: page.content ? page.content.split(' ').length : 0,
+            readTime: Math.max(1, Math.ceil((page.content?.split(' ').length || 0) / 200))
+          }
+        }));
+
+        return {
+          data: {
+            items: searchResults,
+            total: response.data.total,
+            page: response.data.page,
+            limit: response.data.limit,
+            pagination: response.data.pagination
+          },
+          success: true,
+          message: `Found ${searchResults.length} results (fallback search)`
+        };
+      }
+
       return {
         data: { items: [], total: 0, page: 1, limit: query.limit || 10 },
         success: false,
-        message: 'Search failed'
+        message: 'No results found'
       };
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -130,16 +211,26 @@ export class SearchService {
 
     // Try the real API first, but don't let it break the UI
     try {
+      console.log('💡 Suggestions API Debug:', {
+        endpoint: `search/sites/${cognitorApi.siteId}/suggest`,
+        siteId: cognitorApi.siteId,
+        term,
+        limit
+      });
+
       const response = await cognitorApi.get<any>(`search/sites/${cognitorApi.siteId}/suggest`, {
         q: term,
         limit: limit,
-      }, {
-        cache: 'default',
-        next: { 
-          revalidate: 600, // 10 minutes
-          tags: ['search-suggestions'] 
-        },
-      });
+      }, process.env.NODE_ENV === 'development' 
+          ? { cache: 'no-store' }
+          : {
+              cache: 'default',
+              next: { 
+                revalidate: 600, // 10 minutes
+                tags: ['search-suggestions'] 
+              },
+            }
+      );
 
       if (response.success && response.data && Array.isArray(response.data) && response.data.length > 0) {
         // Transform suggestions to our format
@@ -165,8 +256,14 @@ export class SearchService {
         message: staticSuggestions.length > 0 ? 'Static suggestions provided' : 'No suggestions found'
       };
     } catch (error) {
-      // Log error but don't break the UI
-      console.warn('Suggest API unavailable, using static suggestions:', error instanceof Error ? error.message : 'Unknown error');
+      // Log detailed error information
+      console.warn('💡 Suggestions API Error (using fallback):', {
+        endpoint: `search/sites/${cognitorApi.siteId}/suggest`,
+        siteId: cognitorApi.siteId,
+        term,
+        limit,
+        error: error instanceof Error ? error.message : error
+      });
       
       // Always provide static suggestions as fallback
       const staticSuggestions = getStaticSuggestions();
@@ -275,13 +372,16 @@ export class SearchService {
   async getSearchAnalytics(period = '30d'): Promise<CognitorResponse<SearchAnalytics>> {
     return cognitorApi.get<SearchAnalytics>('search/analytics', {
       period,
-    }, {
-      cache: 'force-cache',
-      next: { 
-        revalidate: 3600, // 1 hour
-        tags: ['search-analytics'] 
-      },
-    });
+    }, process.env.NODE_ENV === 'development' 
+        ? { cache: 'no-store' }
+        : {
+            cache: 'force-cache',
+            next: { 
+              revalidate: 3600, // 1 hour
+              tags: ['search-analytics'] 
+            },
+          }
+    );
   }
 
   /**
@@ -300,6 +400,21 @@ export class SearchService {
     } catch (error) {
       // Analytics failures shouldn't break the user experience
       console.warn('Failed to track search interaction:', error);
+    }
+  }
+
+  /**
+   * Check if search API is available
+   */
+  async isSearchApiAvailable(): Promise<boolean> {
+    try {
+      await cognitorApi.get(`search/sites/${cognitorApi.siteId}/health`, {}, {
+        cache: 'no-store',
+      });
+      return true;
+    } catch (error) {
+      console.warn('Search API health check failed:', error);
+      return false;
     }
   }
 }

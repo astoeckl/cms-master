@@ -26,9 +26,9 @@ export class PagesService {
     if (params.search) queryParams.search = params.search;
 
     return cognitorApi.get<PaginatedData<CognitorPage>>('pages', queryParams, {
-      cache: 'force-cache',
+      cache: process.env.NODE_ENV === 'development' ? 'no-store' : 'force-cache',
       next: { 
-        revalidate: 3600, // 1 hour
+        revalidate: process.env.NODE_ENV === 'development' ? 0 : 300, // 5 minutes in production, no cache in dev
         tags: ['pages'] 
       },
     });
@@ -43,9 +43,9 @@ export class PagesService {
         status: 'published',
         limit: '100' // Get more pages for static generation
       }, {
-        cache: 'force-cache',
+        cache: process.env.NODE_ENV === 'development' ? 'no-store' : 'force-cache',
         next: { 
-          revalidate: 1800, // 30 minutes
+          revalidate: process.env.NODE_ENV === 'development' ? 0 : 300, // 5 minutes in production, no cache in dev
           tags: ['pages', 'sitemap'] 
         },
       });
@@ -81,13 +81,15 @@ export class PagesService {
 
     const cacheOptions = params.preview 
       ? { cache: 'no-store' as const }
-      : { 
-          cache: 'force-cache' as const, 
-          next: { 
-            revalidate: 1800, // 30 minutes
-            tags: ['page', `page-${params.slug}`] 
-          } 
-        };
+      : process.env.NODE_ENV === 'development'
+        ? { cache: 'no-store' as const }
+        : { 
+            cache: 'force-cache' as const, 
+            next: { 
+              revalidate: 300, // 5 minutes in production
+              tags: ['page', `page-${params.slug}`] 
+            } 
+          };
 
     try {
       const response = await cognitorApi.get<PaginatedData<CognitorPage>>(
@@ -105,7 +107,16 @@ export class PagesService {
         };
       }
 
-      const pageMetadata = response.data.items[0];
+      // Find the page with the matching slug (not hardcoded first item!)
+      const pageMetadata = response.data.items.find(page => page.slug === params.slug);
+      
+      if (!pageMetadata) {
+        return {
+          success: false,
+          data: null as any,
+          message: `Page with slug '${params.slug}' not found`
+        };
+      }
       
       // Step 2: Get full content using page ID
       const fullPageResponse = await cognitorApi.get<CognitorPage>(
@@ -170,9 +181,9 @@ export class PagesService {
       `pages/${slug}/metadata`,
       {},
       {
-        cache: 'force-cache',
+        cache: process.env.NODE_ENV === 'development' ? 'no-store' : 'force-cache',
         next: { 
-          revalidate: 3600, // 1 hour
+          revalidate: process.env.NODE_ENV === 'development' ? 0 : 300, // 5 minutes in production, no cache in dev
           tags: ['page-metadata', `page-metadata-${slug}`] 
         },
       }
@@ -187,9 +198,9 @@ export class PagesService {
       `pages/${pageId}/related`,
       { limit },
       {
-        cache: 'force-cache',
+        cache: process.env.NODE_ENV === 'development' ? 'no-store' : 'force-cache',
         next: { 
-          revalidate: 1800, // 30 minutes
+          revalidate: process.env.NODE_ENV === 'development' ? 0 : 300, // 5 minutes in production, no cache in dev
           tags: ['pages', 'related-pages'] 
         },
       }
@@ -204,9 +215,9 @@ export class PagesService {
       `pages/${slug}/hierarchy`,
       {},
       {
-        cache: 'force-cache',
+        cache: process.env.NODE_ENV === 'development' ? 'no-store' : 'force-cache',
         next: { 
-          revalidate: 3600, // 1 hour
+          revalidate: process.env.NODE_ENV === 'development' ? 0 : 300, // 5 minutes in production, no cache in dev
           tags: ['page-hierarchy', `hierarchy-${slug}`] 
         },
       }

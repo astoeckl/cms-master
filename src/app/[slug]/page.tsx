@@ -78,8 +78,13 @@ export async function generateMetadata({ params }: DynamicPageProps): Promise<Me
   }
 }
 
-// Generate static params for popular pages (optional optimization)
+// Generate static params for popular pages (only in production)
 export async function generateStaticParams() {
+  // Skip static generation in development for faster iteration
+  if (process.env.NODE_ENV === 'development') {
+    return [];
+  }
+
   try {
     const response = await pagesService.getAllPublishedPages();
     
