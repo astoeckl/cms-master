@@ -57,20 +57,3 @@
 [context.branch-deploy.environment]
   NODE_ENV = "development"
 
-# Functions configuration (if needed)
-[functions]
-  directory = "netlify/functions"
-
-# Build plugins
-[[plugins]]
-  package = "netlify-plugin-cache"
-  [plugins.inputs]
-    paths = [
-      "node_modules",
-      ".next/cache"
-    ]
-
-# Edge functions (optional)
-[[edge_functions]]
-  function = "rewrite"
-  path = "/*"
