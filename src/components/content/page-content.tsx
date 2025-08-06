@@ -83,11 +83,11 @@ export function PageContent({ page }: PageContentProps) {
           )}
 
           {/* Additional updated date if both exist and different */}
-          {page.updatedAt && page.publishedAt && page.updatedAt !== page.publishedAt && (
+          {page.updated_at && page.publishedAt && page.updated_at !== page.publishedAt && (
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
               <span>
-                Updated {new Date(page.updatedAt).toLocaleDateString('en-US', {
+                Updated {new Date(page.updated_at).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
@@ -107,7 +107,7 @@ export function PageContent({ page }: PageContentProps) {
           {/* Reading Time (estimated) */}
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
-            <span>{estimateReadingTime(page.content)} min read</span>
+            <span>{estimateReadingTime(page.content || [])} min read</span>
           </div>
         </div>
 

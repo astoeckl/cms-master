@@ -82,16 +82,13 @@ export class SearchService {
         return {
           data: {
             items: transformedResults,
-            total: total,
-            page: page,
-            limit: size,
             pagination: {
               page: page,
               limit: size,
               total: total,
               totalPages: total_pages,
               hasNext: page < total_pages,
-              hasPrev: page > 1
+              hasPrevious: page > 1
             }
           },
           success: true,
@@ -100,7 +97,7 @@ export class SearchService {
       }
 
       return {
-        data: { items: [], total: 0, page: 1, limit: query.limit || 10 },
+        data: { items: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0, hasNext: false, hasPrevious: false } },
         success: false,
         message: 'No results found'
       };
@@ -120,7 +117,7 @@ export class SearchService {
       } catch (fallbackError) {
         console.error('❌ Fallback search also failed:', fallbackError);
         return {
-          data: { items: [], total: 0, page: 1, limit: query.limit || 10 },
+          data: { items: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0, hasNext: false, hasPrevious: false } },
           success: false,
           message: 'Search temporarily unavailable'
         };
@@ -145,28 +142,25 @@ export class SearchService {
       if (response.success && response.data.items) {
         // Transform pages to search results
         const searchResults: SearchResult[] = response.data.items.map((page) => ({
-          id: page.id,
+          id: String(page.id),
           type: 'page',
           title: page.title,
-          excerpt: page.excerpt || page.content?.substring(0, 200) || '',
+          excerpt: page.excerpt || page.description || '',
           url: `/${page.slug}`,
           score: 1.0, // No real scoring in fallback
-          publishedAt: page.publishedAt,
+          publishedAt: page.publishedAt || page.updated_at,
           category: page.category,
           tags: page.tags || [],
           metadata: {
             contentType: 'page',
-            wordCount: page.content ? page.content.split(' ').length : 0,
-            readTime: Math.max(1, Math.ceil((page.content?.split(' ').length || 0) / 200))
+            wordCount: 0,
+            readTime: 1
           }
         }));
 
         return {
           data: {
             items: searchResults,
-            total: response.data.total,
-            page: response.data.page,
-            limit: response.data.limit,
             pagination: response.data.pagination
           },
           success: true,
@@ -175,7 +169,7 @@ export class SearchService {
       }
 
       return {
-        data: { items: [], total: 0, page: 1, limit: query.limit || 10 },
+        data: { items: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0, hasNext: false, hasPrevious: false } },
         success: false,
         message: 'No results found'
       };
@@ -314,6 +308,7 @@ export class SearchService {
       return searches
         .slice(0, limit)
         .map((term, index) => ({
+          id: `search-${index}`,
           text: term,
           type: 'page' as const,
         }));

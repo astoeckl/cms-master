@@ -9,6 +9,8 @@ import { SearchResults } from "@/components/search/search-results";
 import { SearchSkeleton } from "@/components/search/search-skeleton";
 import type { PageProps } from "@/lib/types";
 
+
+
 export const metadata: Metadata = {
   title: "Search",
   description: "Search through all content on this site",

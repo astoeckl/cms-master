@@ -3,7 +3,7 @@
  */
 
 import { notFound } from "next/navigation";
-import type { Metadata } from "next/metadata";
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { pagesService } from "@/lib/api";
 import { PageContent } from "@/components/content/page-content";
@@ -40,9 +40,9 @@ export async function generateMetadata({ params }: DynamicPageProps): Promise<Me
       openGraph: {
         title: page.metadata?.openGraph?.title || title,
         description: page.metadata?.openGraph?.description || description,
-        type: page.metadata?.openGraph?.type || "article",
+        type: (page.metadata?.openGraph?.type as "article" | "website") || "article",
         publishedTime: page.publishedAt,
-        modifiedTime: page.updatedAt,
+        modifiedTime: page.updated_at,
         authors: page.author ? [page.author.name] : undefined,
         section: page.category?.name,
         tags: page.tags,
@@ -113,9 +113,17 @@ export default async function DynamicPage({ params }: DynamicPageProps) {
     }
 
     const page = response.data;
+    
+    // Check if page has sidebar elements
+    const hasSidebarElements = page.page_elements?.some(element => element.section === 'sidebar');
+    
+    // Use different container classes based on layout type
+    const containerClasses = hasSidebarElements 
+      ? "w-full max-w-none py-8 px-4 sm:px-6 lg:px-8 xl:px-12" // Full width for sidebar layout
+      : "container max-w-4xl py-8 px-4 sm:px-6 lg:px-8"; // Standard width for single column
 
     return (
-      <div className="container max-w-4xl py-8 px-4 sm:px-6 lg:px-8">
+      <div className={containerClasses}>
         {/* Breadcrumbs */}
         <Suspense fallback={<BreadcrumbsSkeleton />}>
           <Breadcrumbs currentPath={`/${slug}`} />

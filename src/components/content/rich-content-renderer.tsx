@@ -13,6 +13,99 @@ import { Separator } from "@/components/ui/separator";
 import type { RichContent, PageElement, ContentElement } from "@/lib/types";
 import { ContentReferenceList, ContentReferenceGrid, ContentReferenceTeaser } from "./content-references";
 
+/**
+ * Video Player Component - Handles various video platforms and formats
+ */
+interface VideoPlayerProps {
+  url: string;
+  title?: string;
+}
+
+function VideoPlayer({ url, title }: VideoPlayerProps) {
+  // Get YouTube video ID
+  const getYouTubeId = (url: string): string | null => {
+    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+  };
+
+  // Get Vimeo video ID
+  const getVimeoId = (url: string): string | null => {
+    const regex = /(?:vimeo)\.com.*(?:videos|video|channels|)\/([\d]+)/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+  };
+
+  // Check if it's a direct video file
+  const isDirectVideo = (url: string): boolean => {
+    return /\.(mp4|webm|ogg|avi|mov|wmv|flv|mkv)(\?.*)?$/i.test(url);
+  };
+
+  // YouTube embed
+  const youtubeId = getYouTubeId(url);
+  if (youtubeId) {
+    return (
+      <div className="relative aspect-video w-full overflow-hidden rounded-lg shadow-md">
+        <iframe
+          src={`https://www.youtube.com/embed/${youtubeId}?rel=0&modestbranding=1`}
+          title={title || 'YouTube Video'}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="absolute inset-0 h-full w-full"
+        />
+      </div>
+    );
+  }
+
+  // Vimeo embed
+  const vimeoId = getVimeoId(url);
+  if (vimeoId) {
+    return (
+      <div className="relative aspect-video w-full overflow-hidden rounded-lg shadow-md">
+        <iframe
+          src={`https://player.vimeo.com/video/${vimeoId}`}
+          title={title || 'Vimeo Video'}
+          allow="autoplay; fullscreen; picture-in-picture"
+          allowFullScreen
+          className="absolute inset-0 h-full w-full"
+        />
+      </div>
+    );
+  }
+
+  // Direct video file
+  if (isDirectVideo(url)) {
+    return (
+      <div className="relative aspect-video w-full overflow-hidden rounded-lg shadow-md">
+        <video
+          controls
+          preload="metadata"
+          className="h-full w-full object-cover"
+          title={title || 'Video'}
+        >
+          <source src={url} type="video/mp4" />
+          <source src={url} type="video/webm" />
+          <source src={url} type="video/ogg" />
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    );
+  }
+
+  // Fallback: generic iframe embed
+  return (
+    <div className="relative aspect-video w-full overflow-hidden rounded-lg shadow-md">
+      <iframe
+        src={url}
+        title={title || 'Video Player'}
+        allow="autoplay; fullscreen"
+        allowFullScreen
+        className="absolute inset-0 h-full w-full"
+      />
+    </div>
+  );
+}
+
 interface RichContentRendererProps {
   content?: RichContent[];
   pageElements?: PageElement[];
@@ -35,9 +128,9 @@ export function RichContentRenderer({ content, pageElements }: RichContentRender
 
     if (hasSidebar) {
       return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content - Takes 2/3 on large screens */}
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 lg:gap-8 xl:gap-12">
+          {/* Main Content - Takes 3/4 on extra large screens, full width on smaller */}
+          <div className="xl:col-span-3">
             <div className="prose prose-gray dark:prose-invert max-w-none space-y-6">
               {mainElements.map((element) => (
                 <PageElementRenderer key={element.id} element={element} />
@@ -45,9 +138,9 @@ export function RichContentRenderer({ content, pageElements }: RichContentRender
             </div>
           </div>
 
-          {/* Sidebar - Takes 1/3 on large screens */}
-          <div className="lg:col-span-1">
-            <div className="space-y-4 lg:sticky lg:top-4">
+          {/* Sidebar - Takes 1/4 on extra large screens */}
+          <div className="xl:col-span-1">
+            <div className="space-y-4 xl:sticky xl:top-4">
               {sidebarElements.map((element) => (
                 <PageElementRenderer key={element.id} element={element} />
               ))}
@@ -60,7 +153,7 @@ export function RichContentRenderer({ content, pageElements }: RichContentRender
     // No sidebar - full width layout
     return (
       <div className="prose prose-gray dark:prose-invert max-w-none">
-        <div className="space-y-6">
+      <div className="space-y-6">
           {mainElements.map((element) => (
             <PageElementRenderer key={element.id} element={element} />
           ))}
@@ -120,65 +213,84 @@ function PageElementRenderer({ element }: PageElementRendererProps) {
   };
 
   const renderContent = () => {
-    switch (type_identifier) {
-      case 'textmitbilddemo':
-        return (
-          <div className="space-y-8">
-            {/* Title */}
-            {data.title && (
-              <h2 className="text-3xl font-bold text-foreground leading-tight">
-                {data.title}
-              </h2>
-            )}
-            
-            {/* Image */}
-            {data.image && (
-              <div className="relative aspect-[16/9] w-full overflow-hidden rounded-lg shadow-md">
-                <Image
-                  src={data.image}
-                  alt={data.title || 'Content image'}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
-                />
-              </div>
-            )}
-            
-            {/* Content */}
-            {data.content && (
-              <div className="prose prose-lg prose-gray dark:prose-invert max-w-none">
-                <p className="text-muted-foreground leading-relaxed text-lg">
-                  {data.content}
-                </p>
-              </div>
-            )}
-          </div>
-        );
+  switch (type_identifier) {
+    case 'textmitbilddemo':
+      return (
+        <div className="space-y-8">
+          {/* Title */}
+          {data.title && (
+            <h2 className="text-3xl font-bold text-foreground leading-tight">
+              {data.title}
+            </h2>
+          )}
+          
+          {/* Image */}
+          {data.image && (
+            <div className="relative aspect-[16/9] w-full overflow-hidden rounded-lg shadow-md">
+              <Image
+                src={data.image}
+                alt={data.title || 'Content image'}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+              />
+            </div>
+          )}
+          
+          {/* Content */}
+          {data.content && (
+            <div className="prose prose-lg prose-gray dark:prose-invert max-w-none">
+              <p className="text-muted-foreground leading-relaxed text-lg">
+                {data.content}
+              </p>
+            </div>
+          )}
+        </div>
+      );
 
-      case 'text':
-        return (
-          <div className="prose prose-gray dark:prose-invert max-w-none">
-            {data.title && <h2>{data.title}</h2>}
-            {data.content && <p>{data.content}</p>}
-          </div>
-        );
+    case 'text':
+      return (
+        <div className="prose prose-gray dark:prose-invert max-w-none">
+          {data.title && <h2>{data.title}</h2>}
+          {data.content && <p>{data.content}</p>}
+        </div>
+      );
 
-      case 'image':
+    case 'image':
+      return (
+        <div className="space-y-4">
+          {data.title && (
+            <h3 className="text-xl font-semibold">{data.title}</h3>
+          )}
+          {data.url && (
+            <div className="relative aspect-[16/9] w-full overflow-hidden rounded-lg">
+              <Image
+                src={data.url}
+                alt={data.alt || data.title || 'Image'}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+              />
+            </div>
+          )}
+          {data.caption && (
+            <p className="text-sm text-muted-foreground text-center">
+              {data.caption}
+            </p>
+          )}
+        </div>
+      );
+
+      case 'video':
+      case 'video_player':
+      case 'video_embed':
         return (
           <div className="space-y-4">
             {data.title && (
               <h3 className="text-xl font-semibold">{data.title}</h3>
             )}
             {data.url && (
-              <div className="relative aspect-[16/9] w-full overflow-hidden rounded-lg">
-                <Image
-                  src={data.url}
-                  alt={data.alt || data.title || 'Image'}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
-                />
-              </div>
+              <VideoPlayer url={data.url} title={data.title || data.alt} />
             )}
             {data.caption && (
               <p className="text-sm text-muted-foreground text-center">
@@ -221,6 +333,11 @@ function PageElementRenderer({ element }: PageElementRendererProps) {
                   />
                 </div>
               )}
+              {data.video_url && (
+                <div className="mt-6">
+                  <VideoPlayer url={data.video_url} title={data.title} />
+                </div>
+              )}
             </div>
           </div>
         );
@@ -238,6 +355,11 @@ function PageElementRenderer({ element }: PageElementRendererProps) {
                   className="object-cover"
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 />
+              </div>
+            )}
+            {data.video_url && (
+              <div className="relative">
+                <VideoPlayer url={data.video_url} title={data.title} />
               </div>
             )}
             <CardContent className="p-6">
@@ -311,7 +433,7 @@ function PageElementRenderer({ element }: PageElementRendererProps) {
       case 'feature':
       case 'feature_highlight':
       case 'feature_item':
-        return (
+      return (
         <Card>
           <CardContent className="p-6">
             <div className="space-y-4">
@@ -371,6 +493,59 @@ function PageElementRenderer({ element }: PageElementRendererProps) {
             </div>
           </CardContent>
         </Card>
+      );
+
+      case 'youtube':
+      case 'vimeo':
+      case 'video_shortcode':
+        return (
+          <div className="space-y-4">
+            {data.title && (
+              <h3 className="text-xl font-semibold">{data.title}</h3>
+            )}
+            <VideoPlayer 
+              url={data.url || data.video_url || data.src} 
+              title={data.title || data.alt} 
+            />
+            {data.description && (
+              <p className="text-sm text-muted-foreground">{data.description}</p>
+            )}
+          </div>
+        );
+
+      case 'media_gallery':
+      case 'mixed_gallery':
+        return (
+          <div className="space-y-6">
+            {data.title && (
+              <h3 className="text-xl font-semibold">{data.title}</h3>
+            )}
+            <div className="grid gap-4">
+              {data.items?.map((item: any, index: number) => (
+                <div key={index} className="space-y-2">
+                  {item.type === 'video' || item.video_url ? (
+                    <VideoPlayer 
+                      url={item.video_url || item.url} 
+                      title={item.title || `Media ${index + 1}`} 
+                    />
+                  ) : item.type === 'image' || item.image_url ? (
+                    <div className="relative aspect-[16/9] w-full overflow-hidden rounded-lg">
+                      <Image
+                        src={item.image_url || item.url}
+                        alt={item.alt || item.title || `Gallery image ${index + 1}`}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+                      />
+                    </div>
+                  ) : null}
+                  {item.caption && (
+                    <p className="text-sm text-muted-foreground">{item.caption}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         );
 
       default:
@@ -445,6 +620,13 @@ function PageElementRenderer({ element }: PageElementRendererProps) {
                       🔧 Object values detected - using safe rendering
                     </div>
                   )}
+                  {Object.keys(data).some(key => 
+                    typeof data[key] === 'string' && isVideoUrl(data[key])
+                  ) && (
+                    <div className="mt-2 text-blue-600">
+                      🎥 Video URLs detected - using VideoPlayer
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -473,7 +655,7 @@ function ContentBlock({ block }: ContentBlockProps) {
         <div>
           {content && <RichContentRenderer content={content} />}
         </div>
-        );
+      );
 
     case 'paragraph':
       return (
@@ -485,7 +667,7 @@ function ContentBlock({ block }: ContentBlockProps) {
 
     case 'heading':
       const level = attrs?.level || 1;
-      const HeadingTag = `h${Math.min(Math.max(level, 1), 6)}` as keyof JSX.IntrinsicElements;
+      const HeadingTag = `h${Math.min(Math.max(level, 1), 6)}` as keyof React.JSX.IntrinsicElements;
       const headingClasses = {
         1: "text-3xl font-bold tracking-tight",
         2: "text-2xl font-semibold tracking-tight",
@@ -594,7 +776,7 @@ function ContentBlock({ block }: ContentBlockProps) {
             </code>
           </pre>
         </div>
-        );
+      );
 
     case 'bulletList':
       return (
@@ -669,7 +851,7 @@ function ContentBlock({ block }: ContentBlockProps) {
             </tbody>
           </table>
         </div>
-        );
+      );
 
     case 'tableRow':
       return (
@@ -728,7 +910,7 @@ function ContentBlock({ block }: ContentBlockProps) {
           {text && <p className="mt-2">{text}</p>}
           {content && <RichContentRenderer content={content} />}
         </div>
-        );
+      );
   }
 }
 
@@ -741,31 +923,56 @@ interface GenericFieldRendererProps {
   contentType: string;
 }
 
+// Utility functions for URL detection
+const isImageUrl = (url: string): boolean => {
+  if (!url || typeof url !== 'string') return false;
+  
+  // Check for common image extensions
+  const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff|ico)(\?.*)?$/i;
+  if (imageExtensions.test(url)) return true;
+
+  // Check for common CDN/storage patterns
+  const imageCdnPatterns = [
+    /amazonaws\.com.*\.(jpg|jpeg|png|gif|webp)/i,
+    /cloudinary\.com/i,
+    /imgix\.net/i,
+    /s3\..*\.amazonaws\.com/i,
+    /cognotor\.s3\./i, // Cognitor specific
+  ];
+  
+  return imageCdnPatterns.some(pattern => pattern.test(url));
+};
+
+const isVideoUrl = (url: string): boolean => {
+  if (!url || typeof url !== 'string') return false;
+  
+  // Check for common video extensions
+  const videoExtensions = /\.(mp4|webm|ogg|avi|mov|wmv|flv|mkv)(\?.*)?$/i;
+  if (videoExtensions.test(url)) return true;
+
+  // Check for video platforms
+  const videoPlatforms = [
+    /youtube\.com\/watch\?v=/i,
+    /youtu\.be\//i,
+    /youtube\.com\/embed\//i,
+    /vimeo\.com\//i,
+    /player\.vimeo\.com\//i,
+    /dailymotion\.com\//i,
+    /twitch\.tv\//i,
+    /wistia\.com\//i,
+    /brightcove\.com\//i,
+    /loom\.com\//i,
+    /streamable\.com\//i,
+  ];
+  
+  return videoPlatforms.some(pattern => pattern.test(url));
+};
+
 function GenericFieldRenderer({ fieldName, value, contentType }: GenericFieldRendererProps) {
   // Skip null/undefined values
   if (value == null) return null;
 
   const valueStr = String(value);
-
-  // Check if it's an image URL
-  const isImageUrl = (url: string): boolean => {
-    if (!url || typeof url !== 'string') return false;
-    
-    // Check for common image extensions
-    const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff|ico)(\?.*)?$/i;
-    if (imageExtensions.test(url)) return true;
-
-    // Check for common CDN/storage patterns
-    const imageCdnPatterns = [
-      /amazonaws\.com.*\.(jpg|jpeg|png|gif|webp)/i,
-      /cloudinary\.com/i,
-      /imgix\.net/i,
-      /s3\..*\.amazonaws\.com/i,
-      /cognotor\.s3\./i, // Cognitor specific
-    ];
-    
-    return imageCdnPatterns.some(pattern => pattern.test(url));
-  };
 
   // Check if it's a URL
   const isUrl = (text: string): boolean => {
@@ -776,6 +983,18 @@ function GenericFieldRenderer({ fieldName, value, contentType }: GenericFieldRen
       return false;
     }
   };
+
+  // Video field renderer
+  if (isVideoUrl(valueStr)) {
+    return (
+      <div className="space-y-2">
+        <div className="text-sm font-medium text-muted-foreground capitalize">
+          {fieldName.replace(/[_-]/g, ' ')}
+        </div>
+        <VideoPlayer url={valueStr} title={fieldName} />
+      </div>
+    );
+  }
 
   // Image field renderer
   if (isImageUrl(valueStr)) {

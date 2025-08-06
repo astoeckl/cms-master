@@ -107,7 +107,7 @@ export function ContentReferenceList({ data, contentType }: ContentReferenceProp
                     {getItemDate(item) && (
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        <time dateTime={getItemDate(item)}>
+                        <time dateTime={getItemDate(item) || undefined}>
                           {new Date(getItemDate(item)!).toLocaleDateString()}
                         </time>
                       </div>
@@ -218,7 +218,7 @@ export function ContentReferenceGrid({ data, contentType }: ContentReferenceProp
                   {getItemDate(item) && (
                     <div className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      <time dateTime={getItemDate(item)}>
+                      <time dateTime={getItemDate(item) || undefined}>
                         {new Date(getItemDate(item)!).toLocaleDateString()}
                       </time>
                     </div>

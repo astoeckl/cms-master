@@ -24,7 +24,7 @@ export interface Pagination {
   total: number;
   totalPages: number;
   hasNext?: boolean;
-  hasPrev?: boolean;
+  hasPrevious?: boolean;
 }
 
 // Content Types

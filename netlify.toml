@@ -3,7 +3,7 @@
   command = "npm run build"
 
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "20"
   NPM_FLAGS = "--prefix=/dev/null"
 
 # Next.js build output configuration
@@ -36,18 +36,17 @@
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
 
-# Redirect configuration for SPA-style routing
+# Handle Next.js dynamic routes and API routes
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
 
-# Handle dynamic routes
+# Catch-all redirect for client-side routing
 [[redirects]]
   from = "/*"
-  to = "/index.html"
-  status = 200
-  conditions = {Role = ["admin"]}
+  to = "/404.html"
+  status = 404
 
 # Environment-specific settings
 [context.production.environment]

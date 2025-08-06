@@ -20,25 +20,19 @@ export function FooterNavigation() {
         id: 'home',
         title: 'Home', 
         url: '/', 
-        level: 1, 
-        parent_id: null, 
-        sort_order: 1 
+        order: 1 
       },
       { 
         id: 'pages',
         title: 'All Pages', 
         url: '/pages', 
-        level: 1, 
-        parent_id: null, 
-        sort_order: 2 
+        order: 2 
       },
       { 
         id: 'search',
         title: 'Search', 
         url: '/search', 
-        level: 1, 
-        parent_id: null, 
-        sort_order: 3 
+        order: 3 
       }
     ];
     

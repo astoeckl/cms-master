@@ -191,7 +191,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
                               </Badge>
                             )}
                             <span className="text-xs text-muted-foreground">
-                              {result.contentType}
+                              {result.metadata.contentType}
                             </span>
                           </div>
                         </div>
