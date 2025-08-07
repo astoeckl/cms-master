@@ -49,7 +49,7 @@ A modern, headless CMS master application built with Next.js 15, designed for dy
    ```env
    COGNITOR_SITE_ID=your-site-identifier
    COGNITOR_API_BASE_URL=https://api.cognitor.dev
-   COGNITOR_API_KEY=optional-api-key
+
    NEXT_PUBLIC_SITE_URL=http://localhost:3000
    NEXT_PUBLIC_SITE_NAME=Your Site Name
    NEXT_PUBLIC_DEFAULT_THEME=default
