@@ -147,7 +147,17 @@ async function PagesGrid() {
     );
   } catch (error) {
     console.error('Failed to load pages:', error);
-    return <PagesError />;
+    
+    // Provide more detailed error information in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error details:', {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+    }
+    
+    return <PagesError error={error instanceof Error ? error.message : String(error)} />;
   }
 }
 
@@ -176,7 +186,7 @@ function NoPagesFound() {
 /**
  * Error state
  */
-function PagesError() {
+function PagesError({ error }: { error?: string }) {
   return (
     <div className="text-center py-12">
       <div className="space-y-4">
@@ -184,6 +194,14 @@ function PagesError() {
         <p className="text-muted-foreground">
           There was an error loading the pages. Please try again.
         </p>
+        {error && process.env.NODE_ENV === 'development' && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-left max-w-2xl mx-auto">
+            <p className="text-sm text-red-800 font-medium mb-2">Development Error Details:</p>
+            <pre className="text-xs text-red-700 whitespace-pre-wrap break-words">
+              {error}
+            </pre>
+          </div>
+        )}
         <Button variant="outline" asChild>
           <Link href="/pages">
             Try Again

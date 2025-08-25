@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { searchService } from "@/lib/api";
+import { clientSearchService } from "@/lib/api/search-client";
 import type { SearchSuggestion } from "@/lib/types";
 import { useDebounce } from "@/lib/hooks/use-debounce";
 
@@ -41,16 +41,11 @@ export function SearchInterface({ initialQuery = '' }: SearchInterfaceProps) {
   useEffect(() => {
     async function loadInitialData() {
       try {
-        const [recentData, popularData] = await Promise.all([
-          searchService.getRecentSearches(),
-          searchService.getPopularSearches(5),
-        ]);
-
+        const recentData = clientSearchService.getRecentSearches();
         setRecentSearches(recentData);
         
-        if (popularData.success) {
-          setPopularSearches(popularData.data);
-        }
+        // Popular searches not implemented yet
+        setPopularSearches([]);
       } catch (error) {
         console.error('Failed to load search data:', error);
         // Fallback to empty arrays
@@ -72,7 +67,7 @@ export function SearchInterface({ initialQuery = '' }: SearchInterfaceProps) {
 
       setIsLoading(true);
       try {
-        const response = await searchService.getSuggestions(debouncedQuery);
+        const response = await clientSearchService.getSuggestions(debouncedQuery);
         if (response.success) {
           setSuggestions(response.data);
         }
@@ -91,10 +86,10 @@ export function SearchInterface({ initialQuery = '' }: SearchInterfaceProps) {
     if (!searchQuery.trim()) return;
 
     // Save to recent searches
-    searchService.saveRecentSearch(searchQuery);
+    clientSearchService.saveRecentSearch(searchQuery);
     
     // Track search interaction
-    searchService.trackSearchInteraction(searchQuery);
+    clientSearchService.trackSearchInteraction(searchQuery);
     
     // Navigate to search results
     const params = new URLSearchParams(searchParams);
@@ -167,7 +162,7 @@ export function SearchInterface({ initialQuery = '' }: SearchInterfaceProps) {
   };
 
   const clearRecentSearches = () => {
-    searchService.clearRecentSearches();
+    clientSearchService.clearRecentSearches();
     setRecentSearches([]);
   };
 

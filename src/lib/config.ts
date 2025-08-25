@@ -14,7 +14,7 @@ function getSiteId(): string {
   // Try server-side first, then client-side
   return process.env.COGNITOR_SITE_ID || 
          process.env.NEXT_PUBLIC_COGNITOR_SITE_ID || 
-         'default-demo-site';
+         'default';
 }
 
 function getApiBaseUrl(): string {

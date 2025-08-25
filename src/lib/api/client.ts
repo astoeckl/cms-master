@@ -142,9 +142,22 @@ export class CognitorApiClient {
     }
 
     try {
+      console.log(`🔗 API Request: ${method} ${url}`);
+      console.log(`🔧 Config debug:`, {
+        baseUrl: this.baseUrl,
+        siteId: this._siteId,
+        endpoint,
+        builtUrl: url
+      });
+      
       if (config.isDevelopment) {
-        console.log(`🔗 API Request: ${method} ${url}`);
-
+        console.log(`🔧 Request config:`, {
+          headers: this.getHeaders(customHeaders),
+          cache,
+          next,
+          siteId: this._siteId,
+          apiKey: this.apiKey ? 'SET' : 'NOT SET'
+        });
       }
 
       const response = await fetch(url, requestInit);
@@ -165,7 +178,7 @@ export class CognitorApiClient {
         throw new CognitorApiError(
           response.status,
           errorData.code,
-          errorData.message,
+          errorData.message || `HTTP ${response.status}: ${response.statusText}`,
           errorData.details
         );
       }
@@ -220,6 +233,7 @@ export class CognitorApiClient {
       }
 
       // Network or other errors
+      console.error('🔥 Network/API Error:', error);
       throw new CognitorApiError(
         0,
         'NETWORK_ERROR',

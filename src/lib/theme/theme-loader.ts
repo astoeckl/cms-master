@@ -177,8 +177,28 @@ export function applyTheme(theme: Theme): void {
 
     // Apply CSS custom properties for colors
     Object.entries(theme.colors).forEach(([key, value]) => {
-      root.style.setProperty(`--${key}`, value);
+      // Tailwind expects raw HSL components for hsl(var(--...)) usage.
+      // Normalize values like "hsl(210 40% 98%)" -> "210 40% 98%".
+      const normalized = typeof value === 'string' && value.trim().toLowerCase().startsWith('hsl(')
+        ? value.trim().slice(4, -1)
+        : String(value);
+      root.style.setProperty(`--${key}`, normalized);
     });
+
+    // Toggle .dark class based on background lightness so that globals.css dark variables apply
+    try {
+      const bg = theme.colors.background;
+      const bgNormalized = typeof bg === 'string' && bg.trim().toLowerCase().startsWith('hsl(')
+        ? bg.trim().slice(4, -1)
+        : String(bg);
+      const parts = bgNormalized.split(/\s+/);
+      const lightnessStr = parts[2] || '';
+      const lightness = parseFloat(lightnessStr.replace('%', ''));
+      const isDark = !Number.isNaN(lightness) ? lightness < 50 : false;
+      root.classList.toggle('dark', isDark);
+    } catch (_err) {
+      // No-op if parsing fails
+    }
 
     // Apply typography
     if (theme.typography) {
