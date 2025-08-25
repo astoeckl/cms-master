@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { searchService } from "@/lib/api";
+import { clientSearchService } from "@/lib/api/search-client";
 import type { SearchSuggestion, SearchResult } from "@/lib/types";
 import { useDebounce } from "@/lib/hooks";
 
@@ -55,18 +55,13 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
     }
   }, [debouncedQuery]);
 
-  const loadInitialData = async () => {
+  const loadInitialData = () => {
     try {
-      const [recentData, popularData] = await Promise.all([
-        searchService.getRecentSearches(),
-        searchService.getPopularSearches(5),
-      ]);
-
-      setRecentSearches(recentData);
+      const recentData = clientSearchService.getRecentSearches();
+      setRecentSearches(recentData.map(search => ({ text: search, count: 1 }))); // Convert string[] to SearchSuggestion[]
       
-      if (popularData.success) {
-        setPopularSearches(popularData.data);
-      }
+      // Popular searches not implemented yet
+      setPopularSearches([]);
     } catch (error) {
       console.error('Failed to load initial search data:', error);
     }
@@ -76,8 +71,8 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
     setIsLoading(true);
     try {
       const [suggestionsResponse, quickSearchResponse] = await Promise.all([
-        searchService.getSuggestions(searchQuery, 5),
-        searchService.search({
+        clientSearchService.getSuggestions(searchQuery, 5),
+        clientSearchService.search({
           query: searchQuery,
           limit: 3, // Just a few quick results
         }),
@@ -101,10 +96,10 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
     if (!searchQuery.trim()) return;
 
     // Save to recent searches
-    searchService.saveRecentSearch(searchQuery);
+    clientSearchService.saveRecentSearch(searchQuery);
     
     // Track search interaction
-    searchService.trackSearchInteraction(searchQuery);
+    clientSearchService.trackSearchInteraction(searchQuery);
     
     // Close dialog and navigate
     onOpenChange(false);
@@ -121,7 +116,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
   };
 
   const handleResultClick = (result: SearchResult) => {
-    searchService.trackSearchInteraction(query, result.id, 'click');
+    clientSearchService.trackSearchInteraction(query);
     onOpenChange(false);
   };
 
